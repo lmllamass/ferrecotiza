@@ -3,7 +3,7 @@
 echo "🚀 Deploy de FerreCotiza desde GitHub..."
 
 # Variables
-REPO_URL="https://github.com/lmllamas/ferrecotiza.git"
+REPO_URL="https://github.com/lmllamass/ferrecotiza.git"
 DEPLOY_PATH="/var/www/ferrecotiza"
 BRANCH="main"
 
