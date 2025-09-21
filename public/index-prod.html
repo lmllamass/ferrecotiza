@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FerreCotiza</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            margin: 0; 
+            padding: 20px; 
+            min-height: 100vh; 
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
+        .header h1 { font-size: 3rem; margin-bottom: 15px; }
+        .card { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 30px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px;
+        }
+        input, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #e1e5e9; 
+            border-radius: 8px; 
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        .upload-area {
+            border: 2px dashed #9ca3af;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: #f9fafb;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 FerreCotiza</h1>
+            <p>Automatiza tus cotizaciones con IA</p>
+        </div>
+        
+        <div class="card">
+            <h3>🏢 Datos de la empresa</h3>
+            <input type="text" id="empresa" placeholder="Nombre de la empresa">
+            <input type="text" id="contacto" placeholder="Contacto">
+            <input type="email" id="email" placeholder="Email">
+            <input type="tel" id="telefono" placeholder="Teléfono">
+            <textarea id="ubicacion" placeholder="Dirección de entrega" rows="2"></textarea>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Productos</h3>
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div style="font-size: 2rem; margin-bottom: 15px;">📎</div>
+                <h4>Importar desde Excel</h4>
+                <p>Haz clic para seleccionar archivo</p>
+                <input type="file" id="fileInput" style="display: none;" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(this)">
+            </div>
+            
+            <div id="productsList" style="margin-top: 20px;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin: 10px 0;">
+                    <input type="text" placeholder="Descripción" id="desc1">
+                    <input type="number" placeholder="Cantidad" id="qty1">
+                    <input type="text" placeholder="Unidad" id="unit1">
+                    <input type="text" placeholder="Referencia" id="ref1">
+                </div>
+            </div>
+            
+            <button class="btn" onclick="addProduct()">➕ Agregar producto</button>
+            <button class="btn" onclick="submitQuote()" style="background: #10b981; width: 100%; margin-top: 20px;">🚀 Enviar cotización</button>
+        </div>
+        
+        <div class="card" id="results" style="display: none;">
+            <h3>📊 Resultados</h3>
+            <div id="loading" style="text-align: center; padding: 20px;">
+                <div style="border: 3px solid #f3f4f6; border-top: 3px solid #667eea; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <p>Analizando con IA...</p>
+            </div>
+            <div id="resultsContent" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    
+    <script>
+        let products = [];
+        let currentQuoteId = null;
+        
+        async function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload/excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    products = result.products;
+                    displayProducts();
+                    alert(`✅ ${result.total} productos importados`);
+                } else {
+                    alert(`❌ Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        function displayProducts() {
+            const productsList = document.getElementById('productsList');
+            productsList.innerHTML = '';
+            
+            products.forEach((product, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin: 10px 0; padding: 10px; background: #f9fafb; border-radius: 8px;';
+                div.innerHTML = `
+                    <input type="text" value="${product.description}">
+                    <input type="number" value="${product.quantity}">
+                    <input type="text" value="${product.unit}">
+                    <input type="text" value="${product.reference}">
+                `;
+                productsList.appendChild(div);
+            });
+        }
+        
+        function addProduct() {
+            const productsList = document.getElementById('productsList');
+            const div = document.createElement('div');
+            div.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin: 10px 0;';
+            div.innerHTML = `
+                <input type="text" placeholder="Descripción">
+                <input type="number" placeholder="Cantidad">
+                <input type="text" placeholder="Unidad">
+                <input type="text" placeholder="Referencia">
+            `;
+            productsList.appendChild(div);
+        }
+        
+        async function submitQuote() {
+            const company = document.getElementById('empresa').value;
+            const contact = document.getElementById('contacto').value;
+            const email = document.getElementById('email').value;
+            const location = document.getElementById('ubicacion').value;
+            
+            if (!company || !contact || !email || !location) {
+                alert('Complete todos los campos');
+                return;
+            }
+            
+            // Obtener productos del formulario
+            let finalProducts = products.length > 0 ? products : [];
+            
+            if (finalProducts.length === 0) {
+                const desc = document.getElementById('desc1').value;
+                const qty = document.getElementById('qty1').value;
+                const unit = document.getElementById('unit1').value;
+                const ref = document.getElementById('ref1').value;
+                
+                if (desc && qty) {
+                    finalProducts.push({
+                        description: desc,
+                        quantity: parseInt(qty),
+                        unit: unit || 'unidades',
+                        reference: ref
+                    });
+                }
+            }
+            
+            if (finalProducts.length === 0) {
+                alert('Agregue al menos un producto');
+                return;
+            }
+            
+            try {
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('loading').style.display = 'block';
+                
+                const response = await fetch('/api/quotes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company, contact, email, 
+                        phone: document.getElementById('telefono').value,
+                        location, products: finalProducts
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentQuoteId = result.quote.id;
+                    setTimeout(checkDecision, 3000);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function checkDecision() {
+            if (!currentQuoteId) return;
+            
+            try {
+                const response = await fetch(`/api/quotes/${currentQuoteId}/decision`);
+                const result = await response.json();
+                
+                if (result.ready && result.decision) {
+                    showResults(result.decision);
+                } else {
+                    setTimeout(checkDecision, 2000);
+                }
+            } catch (error) {
+                setTimeout(checkDecision, 3000);
+            }
+        }
+        
+        function showResults(decision) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'block';
+            
+            let html = '';
+            
+            if (decision.total_savings > 0) {
+                html += `
+                    <div style="background: #10b981; color: white; padding: 15px; border-radius: 8px; text-align: center; margin: 15px 0;">
+                        <h4>💰 Ahorro: $${decision.total_savings.toLocaleString()}</h4>
+                        <p>Ahorra ${decision.savings_percentage}% con la mejor opción</p>
+                    </div>
+                `;
+            }
+            
+            decision.all_options.forEach((option, index) => {
+                const isBest = index === 0;
+                html += `
+                    <div style="border: 2px solid ${isBest ? '#10b981' : '#e5e7eb'}; border-radius: 12px; padding: 20px; margin: 15px 0; background: ${isBest ? '#ecfdf5' : 'white'};">
+                        ${isBest ? '<div style="background: #10b981; color: white; padding: 5px 15px; border-radius: 15px; display: inline-block; margin-bottom: 10px; font-size: 0.9rem;">🏆 MEJOR OPCIÓN</div>' : ''}
+                        <h4>${option.supplier_name}</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #059669; margin: 10px 0;">$${option.total_amount.toLocaleString()}</div>
+                        <p>⏱️ Entrega: ${option.delivery_time_days} días</p>
+                        <p>📊 Score: ${(option.total_score * 100).toFixed(1)}%</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('resultsContent').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

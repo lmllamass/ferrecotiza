@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Proveedores - FerreCotiza</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { 
+            text-align: center; 
+            color: white; 
+            margin-bottom: 40px; 
+            padding: 20px 0; 
+        }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .card { 
+            background: white; 
+            border-radius: 16px; 
+            padding: 30px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+            margin-bottom: 20px;
+        }
+        .login-form { max-width: 400px; margin: 0 auto; }
+        .input-group { margin-bottom: 20px; }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: #374151; 
+            font-weight: 600; 
+        }
+        input, textarea, select { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid #e5e7eb; 
+            border-radius: 8px; 
+            font-size: 1rem; 
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-success { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+        
+        .quote-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            background: white;
+        }
+        .quote-card.responded {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+        .quote-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .company-name { font-size: 1.3rem; font-weight: 700; color: #1f2937; }
+        .quote-date { color: #6b7280; font-size: 0.9rem; }
+        .quote-status {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-sent {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .status-responded {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .products-table th,
+        .products-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .products-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .price-input {
+            width: 120px;
+            padding: 8px;
+            border-radius: 6px;
+            border: 2px solid #e5e7eb;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+        .price-input.better {
+            border-color: #16a34a;
+            background-color: #dcfce7;
+        }
+        .price-input.worse {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+        }
+        .price-input.equal {
+            border-color: #f59e0b;
+            background-color: #fef3c7;
+        }
+        
+        .competition-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .competition-indicator.better {
+            background: #16a34a;
+        }
+        .competition-indicator.worse {
+            background: #dc2626;
+        }
+        .competition-indicator.equal {
+            background: #f59e0b;
+        }
+        
+        .total-section {
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #0ea5e9;
+        }
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .total-input {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            border: 3px solid #e5e7eb;
+        }
+        .total-input.better {
+            border-color: #16a34a;
+            background-color: #dcfce7;
+        }
+        .total-input.worse {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+        }
+        .total-input.equal {
+            border-color: #f59e0b;
+            background-color: #fef3c7;
+        }
+        
+        .current-quote-info {
+            background: #fef3c7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .hidden { display: none; }
+        
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .quote-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .price-input { width: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Portal de Proveedores</h1>
+            <p>Señales competitivas sin revelar datos confidenciales</p>
+        </div>
+        
+        <!-- Login -->
+        <div id="loginSection" class="card login-form">
+            <h3 style="text-align: center; margin-bottom: 30px; color: #1f2937;">Acceso Proveedores</h3>
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="tu@ferreteria.com">
+            </div>
+            <div class="input-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            <button class="btn" style="width: 100%;" onclick="login()">Iniciar Sesión</button>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px; font-size: 0.9rem;">
+                <strong>Credenciales de prueba:</strong><br>
+                ventas@elconstructor.com<br>
+                cotizaciones@megadist.com<br>
+                ventas@industrialpro.com<br>
+                <em>Cualquier contraseña</em>
+            </div>
+        </div>
+        
+        <!-- Dashboard -->
+        <div id="dashboardSection" class="hidden">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h2 id="supplierName">Bienvenido</h2>
+                        <p style="color: #6b7280;">Verde = Competitivo | Amarillo = En rango | Rojo = Fuera de mercado</p>
+                    </div>
+                    <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
+                </div>
+                
+                <div id="quotesContainer">
+                    <!-- Las cotizaciones se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentSupplier = null;
+        let competitionData = {};
+        
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email) {
+                alert('Ingresa tu email');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/suppliers/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentSupplier = result.supplier;
+                    localStorage.setItem("currentSupplier", JSON.stringify(result.supplier));
+                    window.location.href = "/suppliers-dashboard";                    document.getElementById('supplierName').textContent = result.supplier.name;
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('dashboardSection').classList.remove('hidden');
+                    loadQuotes();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error de conexión');
+            }
+        }
+        
+        function logout() {
+            currentSupplier = null;
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+        
+        async function loadQuotes() {
+            if (!currentSupplier) return;
+            
+            try {
+                const response = await fetch(`/api/suppliers/${currentSupplier.id}/quotes`);
+                const data = await response.json();
+                
+                displayQuotes(data.quotes);
+            } catch (error) {
+                console.error('Error cargando cotizaciones:', error);
+            }
+        }
+        
+        function displayQuotes(quotes) {
+            const container = document.getElementById('quotesContainer');
+            
+            if (quotes.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">No hay cotizaciones activas</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            quotes.forEach(quote => {
+                const isResponded = quote.quote_status === 'responded';
+                
+                html += `
+                    <div class="quote-card ${isResponded ? 'responded' : ''}">
+                        <div class="quote-header">
+                            <div>
+                                <div class="company-name">${quote.company_name}</div>
+                                <div class="quote-date">Solicitud: ${new Date(quote.created_at).toLocaleDateString()}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="quote-status ${isResponded ? 'status-responded' : 'status-sent'}">
+                                    ${isResponded ? 'Cotizado' : 'Pendiente'}
+                                </div>
+                                <div style="font-size: 0.9rem; color: #6b7280; margin-top: 5px;">
+                                    Vence: ${new Date(quote.response_deadline).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${isResponded ? `
+                            <div class="current-quote-info">
+                                <strong>Tu cotización actual:</strong> $${quote.current_response.total_amount.toLocaleString()} 
+                                (${quote.current_response.delivery_time_days} días)
+                                <br><em>Puedes mejorar tu oferta mientras la licitación esté activa</em>
+                            </div>
+                        ` : ''}
+                        
+                        <div><strong>Dirección:</strong> ${quote.delivery_address}</div>
+                        <div style="margin: 10px 0;"><strong>Contacto:</strong> ${quote.contact_name} (${quote.email})</div>
+                        
+                        <button class="btn" onclick="loadCompetition('${quote.id}')" style="margin: 15px 0;">
+                            Cargar Señales Competitivas
+                        </button>
+                        
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Unidad</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Total Línea</th>
+                                    <th>Señal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${quote.products.map(product => {
+                                    const currentPrice = quote.product_prices?.find(p => p.quote_product_id === product.id);
+                                    return `
+                                        <tr>
+                                            <td>${product.description}</td>
+                                            <td>${product.quantity}</td>
+                                            <td>${product.unit}</td>
+                                            <td>
+                                                <input type="number" 
+                                                       class="price-input" 
+                                                       id="unit-price-${product.id}" 
+                                                       value="${currentPrice ? currentPrice.unit_price : ''}"
+                                                       placeholder="0"
+                                                       onchange="updateLineTotal('${product.id}', ${product.quantity}, '${quote.id}')">
+                                            </td>
+                                            <td>
+                                                <input type="number" 
+                                                       class="price-input" 
+                                                       id="total-price-${product.id}" 
+                                                       value="${currentPrice ? currentPrice.total_price : ''}"
+                                                       placeholder="0"
+                                                       readonly
+                                                       style="background: #f3f4f6;">
+                                            </td>
+                                            <td>
+                                                <div id="competition-${product.id}" class="competition-indicator" style="display: none;">
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        
+                        <div class="total-section">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <h4>Total Cotización</h4>
+                                <div class="total-amount" id="quote-total-${quote.id}" 
+                                     style="padding: 15px; border-radius: 12px; border: 3px solid #e5e7eb;">
+                                    $${quote.current_response ? quote.current_response.total_amount.toLocaleString() : '0'}
+                                </div>
+                            </div>
+                            
+                            <div class="grid-2">
+                                <div class="input-group">
+                                    <label>Tiempo de Entrega (días)</label>
+                                    <input type="number" 
+                                           id="delivery-${quote.id}" 
+                                           value="${quote.current_response ? quote.current_response.delivery_time_days : ''}"
+                                           placeholder="3" 
+                                           min="1">
+                                </div>
+                                <div class="input-group">
+                                    <label>Notas adicionales</label>
+                                    <textarea id="notes-${quote.id}" 
+                                              placeholder="Condiciones especiales..." 
+                                              rows="2">${quote.current_response ? quote.current_response.notes || '' : ''}</textarea>
+                                </div>
+                            </div>
+                            
+                            <button class="btn ${isResponded ? 'btn-warning' : 'btn-success'}" 
+                                    onclick="submitQuote('${quote.id}')" 
+                                    style="width: 100%; margin-top: 15px;">
+                                ${isResponded ? 'Actualizar Cotización' : 'Enviar Cotización'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            quotes.forEach(quote => {
+                if (quote.quote_status === 'responded') {
+                    updateQuoteTotal(quote.id);
+                }
+            });
+        }
+        
+        async function loadCompetition(quoteId) {
+            try {
+                const response = await fetch(`/api/suppliers/quotes/${quoteId}/competition/${currentSupplier.id}`);
+                const data = await response.json();
+                
+                competitionData[quoteId] = data;
+                console.log('Señales competitivas cargadas');
+                
+                // Actualizar indicadores existentes
+                Object.keys(data.product_competition).forEach(productId => {
+                    const unitPriceInput = document.getElementById(`unit-price-${productId}`);
+                    if (unitPriceInput && unitPriceInput.value) {
+                        updateCompetitionIndicator(productId, parseFloat(unitPriceInput.value), quoteId);
+                    }
+                });
+                
+                // Actualizar indicador de total
+                updateTotalCompetition(quoteId);
+                
+            } catch (error) {
+                console.error('Error cargando competencia:', error);
+            }
+        }
+        
+        function updateLineTotal(productId, quantity, quoteId) {
+            const unitPriceInput = document.getElementById(`unit-price-${productId}`);
+            const totalPriceInput = document.getElementById(`total-price-${productId}`);
+            
+            const unitPrice = parseFloat(unitPriceInput.value) || 0;
+            const totalPrice = unitPrice * quantity;
+            
+            totalPriceInput.value = totalPrice.toFixed(0);
+            
+            updateCompetitionIndicator(productId, unitPrice, quoteId);
+            updateQuoteTotal(quoteId);
+            updateTotalCompetition(quoteId);
+        }
+        
+        function updateCompetitionIndicator(productId, myUnitPrice, quoteId) {
+            const indicator = document.getElementById(`competition-${productId}`);
+            const unitPriceInput = document.getElementById(`unit-price-${productId}`);
+            
+            if (!competitionData[quoteId] || !competitionData[quoteId].product_competition[productId] || !myUnitPrice) {
+                indicator.style.display = 'none';
+                unitPriceInput.className = 'price-input';
+                return;
+            }
+            
+            const competition = competitionData[quoteId].product_competition[productId];
+            let status = '';
+            
+            if (myUnitPrice < competition.min_price) {
+                status = 'better';
+            } else if (myUnitPrice > competition.max_price) {
+                status = 'worse';
+            } else {
+                status = 'equal';
+            }
+            
+            unitPriceInput.className = `price-input ${status}`;
+            indicator.className = `competition-indicator ${status}`;
+            indicator.style.display = 'inline-block';
+        }
+        
+        function updateTotalCompetition(quoteId) {
+            const totalElement = document.getElementById(`quote-total-${quoteId}`);
+            const myTotal = getCurrentTotal(quoteId);
+            
+            if (!competitionData[quoteId] || !competitionData[quoteId].total_competition || !myTotal) {
+                totalElement.className = 'total-amount';
+                return;
+            }
+            
+            const competition = competitionData[quoteId].total_competition;
+            let status = '';
+            
+            if (myTotal < competition.min_total) {
+                status = 'better';
+            } else if (myTotal > competition.max_total) {
+                status = 'worse';
+            } else {
+                status = 'equal';
+            }
+            
+            totalElement.className = `total-amount ${status}`;
+        }
+        
+        function getCurrentTotal(quoteId) {
+            let total = 0;
+            document.querySelectorAll(`input[id^="total-price-"]`).forEach(input => {
+                if (input.value && input.readOnly) {
+                    total += parseFloat(input.value) || 0;
+                }
+            });
+            return total;
+        }
+        
+        function updateQuoteTotal(quoteId) {
+            const totalElement = document.getElementById(`quote-total-${quoteId}`);
+            const total = getCurrentTotal(quoteId);
+            
+            totalElement.textContent = `$${total.toLocaleString()}`;
+            updateTotalCompetition(quoteId);
+        }
+        
+        async function submitQuote(quoteId) {
+            const deliveryInput = document.getElementById(`delivery-${quoteId}`);
+            const notesInput = document.getElementById(`notes-${quoteId}`);
+            
+            if (!deliveryInput.value) {
+                alert('Ingresa el tiempo de entrega');
+                return;
+            }
+            
+            const productPrices = {};
+            let hasValidPrices = false;
+            
+            document.querySelectorAll(`input[id^="unit-price-"]`).forEach(input => {
+                const productId = input.id.replace('unit-price-', '');
+                const unitPrice = parseFloat(input.value) || 0;
+                const totalPrice = parseFloat(document.getElementById(`total-price-${productId}`).value) || 0;
+                
+                if (unitPrice > 0) {
+                    productPrices[productId] = {
+                        unit_price: unitPrice,
+                        total: totalPrice
+                    };
+                    hasValidPrices = true;
+                }
+            });
+            
+            if (!hasValidPrices) {
+                alert('Ingresa al menos un precio válido');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/suppliers/quotes/${quoteId}/respond`, {method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        supplier_id: currentSupplier.id,
+                        delivery_time_days: parseInt(deliveryInput.value),
+                        notes: notesInput.value,
+                        product_prices: productPrices
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const action = result.updated ? 'actualizada' : 'enviada';
+                    alert(`Cotización ${action}: $${result.total_amount.toLocaleString()}`);
+                    loadQuotes();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error enviando cotización');
+            }
+        }
+    </script>
+</body>
+</html>

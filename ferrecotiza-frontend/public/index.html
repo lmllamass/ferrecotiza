@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FerreCotiza - Upload Excel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
+        .header h1 { font-size: 3rem; margin-bottom: 10px; }
+        .card { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 30px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+            margin-bottom: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #9ca3af;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: #f9fafb;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #667eea;
+            background: #ede9fe;
+            transform: scale(1.02);
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .product-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+        }
+        input, select { 
+            padding: 8px 12px; 
+            border: 2px solid #e1e5e9; 
+            border-radius: 6px; 
+            width: 100%;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .file-input { display: none; }
+        .results { padding: 20px 0; }
+        .supplier-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            background: white;
+        }
+        .supplier-card.best {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        }
+        .price-highlight {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #059669;
+            margin: 10px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 FerreCotiza</h1>
+            <p>Importa tu lista de productos desde Excel</p>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Importar productos desde Excel</h3>
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div style="font-size: 2rem; margin-bottom: 15px;">📎</div>
+                <h4>Arrastra tu archivo Excel aquí</h4>
+                <p style="color: #6b7280; margin: 10px 0;">o haz clic para seleccionar</p>
+                <button type="button" class="btn">Seleccionar archivo</button>
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(this)">
+                <div style="font-size: 0.9rem; color: #9ca3af; margin-top: 15px;">
+                    <strong>Columnas requeridas:</strong> Descripcion, Cantidad, Unidad, Referencia<br>
+                    Formatos: .xlsx, .xls, .csv (máximo 5MB)
+                </div>
+            </div>
+            
+            <div id="productsList"></div>
+        </div>
+        
+        <div class="card">
+            <h3>🏢 Datos de la empresa</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                <input type="text" id="empresa" placeholder="Nombre de la empresa">
+                <input type="text" id="contacto" placeholder="Persona de contacto">
+                <input type="email" id="email" placeholder="Email">
+                <input type="tel" id="telefono" placeholder="Teléfono">
+            </div>
+            <textarea id="ubicacion" placeholder="Dirección de entrega" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; margin: 10px 0;" rows="2"></textarea>
+            
+            <button class="btn" style="width: 100%; padding: 15px; font-size: 1.1rem;" onclick="submitQuote()">
+                🚀 Enviar cotización
+            </button>
+        </div>
+        
+        <div class="card" id="resultsContainer" style="display: none;">
+            <h3>📊 Resultados del análisis</h3>
+            <div id="loadingState" class="loading">
+                <div class="spinner"></div>
+                <p>Analizando precios con IA...</p>
+            </div>
+            <div id="resultsContent" class="results" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        let products = [];
+        let currentQuoteId = null;
+        
+        // Configurar drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        uploadArea.addEventListener('dragover', () => uploadArea.classList.add('dragover'));
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload({ files: files });
+            }
+        });
+        
+        // Manejar upload
+        async function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                uploadArea.style.opacity = '0.5';
+                uploadArea.innerHTML = '<div class="spinner"></div><p>Procesando archivo...</p>';
+                
+                const response = await fetch('/api/upload/excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    products = result.products;
+                    displayProducts();
+                    uploadArea.innerHTML = `
+                        <div style="color: #059669;">✅ Archivo procesado correctamente</div>
+                        <p>${result.total} productos importados desde ${file.name}</p>
+                    `;
+                } else {
+                    uploadArea.innerHTML = `<div style="color: #ef4444;">❌ Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                uploadArea.innerHTML = `<div style="color: #ef4444;">❌ Error: ${error.message}</div>`;
+            } finally {
+                uploadArea.style.opacity = '1';
+                input.value = '';
+            }
+        }
+        
+        // Mostrar productos
+        function displayProducts() {
+            const productsList = document.getElementById('productsList');
+            
+            if (products.length === 0) {
+                productsList.innerHTML = '';
+                return;
+            }
+            
+            let html = '<h4 style="margin: 20px 0 10px 0;">📦 Productos importados:</h4>';
+            
+            products.forEach((product, index) => {
+                html += `
+                    <div class="product-item">
+                        <input type="text" value="${product.description}" onchange="updateProduct(${index}, 'description', this.value)">
+                        <input type="number" value="${product.quantity}" onchange="updateProduct(${index}, 'quantity', this.value)">
+                        <select onchange="updateProduct(${index}, 'unit', this.value)">
+                            <option value="unidades" ${product.unit === 'unidades' ? 'selected' : ''}>Unidades</option>
+                            <option value="bultos" ${product.unit === 'bultos' ? 'selected' : ''}>Bultos</option>
+                            <option value="metros" ${product.unit === 'metros' ? 'selected' : ''}>Metros</option>
+                            <option value="rollos" ${product.unit === 'rollos' ? 'selected' : ''}>Rollos</option>
+                            <option value="kg" ${product.unit === 'kg' ? 'selected' : ''}>Kg</option>
+                        </select>
+                        <input type="text" value="${product.reference}" onchange="updateProduct(${index}, 'reference', this.value)">
+                    </div>
+                `;
+            });
+            
+            productsList.innerHTML = html;
+        }
+        
+        // Actualizar producto
+        function updateProduct(index, field, value) {
+            if (products[index]) {
+                products[index][field] = field === 'quantity' ? parseInt(value) : value;
+            }
+        }
+        
+        // Enviar cotización
+        async function submitQuote() {
+            if (products.length === 0) {
+                alert('Primero importa productos desde Excel');
+                return;
+            }
+            
+            const company = document.getElementById('empresa').value.trim();
+            const contact = document.getElementById('contacto').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const location = document.getElementById('ubicacion').value.trim();
+            
+            if (!company || !contact || !email || !location) {
+                alert('Complete todos los campos de la empresa');
+                return;
+            }
+            
+            try {
+                document.getElementById('resultsContainer').style.display = 'block';
+                document.getElementById('loadingState').style.display = 'block';
+                
+                const response = await fetch('/api/quotes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company,
+                        contact,
+                        email,
+                        phone: document.getElementById('telefono').value,
+                        location,
+                        products
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentQuoteId = result.quote.id;
+                    setTimeout(checkDecision, 3000);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Verificar decisión
+        async function checkDecision() {
+            if (!currentQuoteId) return;
+            
+            try {
+                const response = await fetch(`/api/quotes/${currentQuoteId}/decision`);
+                const result = await response.json();
+                
+                if (result.ready && result.decision) {
+                    showResults(result.decision);
+                } else {
+                    setTimeout(checkDecision, 2000);
+                }
+            } catch (error) {
+                setTimeout(checkDecision, 3000);
+            }
+        }
+        
+        // Mostrar resultados
+        function showResults(decision) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'block';
+            
+            let html = '';
+            
+            if (decision.total_savings > 0) {
+                html += `
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
+                        <h4>💰 Ahorro Total: $${decision.total_savings.toLocaleString()}</h4>
+                        <p>Ahorra ${decision.savings_percentage}% eligiendo la mejor opción</p>
+                    </div>
+                `;
+            }
+            
+            decision.all_options.forEach((option, index) => {
+                const isBest = index === 0;
+                html += `
+                    <div class="supplier-card ${isBest ? 'best' : ''}">
+                        ${isBest ? '<div style="background: #10b981; color: white; padding: 8px 16px; border-radius: 15px; display: inline-block; margin-bottom: 10px; font-size: 0.9rem; font-weight: bold;">🏆 MEJOR OPCIÓN</div>' : ''}
+                        <h4>${option.supplier_name}</h4>
+                        <div class="price-highlight">$${option.total_amount.toLocaleString()}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                            <div style="text-align: center; background: #f9fafb; padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.8rem; color: #6b7280;">Entrega</div>
+                                <div style="font-weight: 600;">${option.delivery_time_days} días</div>
+                            </div>
+                            <div style="text-align: center; background: #f9fafb; padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.8rem; color: #6b7280;">Score</div>
+                                <div style="font-weight: 600;">${(option.total_score * 100).toFixed(1)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('resultsContent').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+echo "🚀 Preparando deploy de FerreCotiza..."
+
+# Crear archivo .env para producción
+cat > .env.production << 'ENVFILE'
+NODE_ENV=production
+PORT=3001
+BASE_URL=https://ferreteria1.com/ferrecotiza
+
+# Base de datos PostgreSQL (reemplazar con datos reales)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=ferrecotiza_user
+DB_PASSWORD=secure_password_here
+DB_NAME=ferrecotiza_prod
+
+# OpenAI API Key
+OPENAI_API_KEY=tu_api_key_aqui
+# OPENAI_API_KEY=your_openai_api_key_here
+
+# Email configuración
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=notificaciones@ferreteria1.com
+EMAIL_PASS=app_password_here
+
+# Seguridad
+JWT_SECRET=random_jwt_secret_here
+SESSION_SECRET=random_session_secret_here
+ENVFILE
+
+echo "✅ Archivo de configuración creado"
+
+# Instalar dependencias de producción
+npm ci --only=production
+
+echo "✅ Dependencias instaladas"
+
+# Crear carpeta de logs
+mkdir -p logs
+
+echo "✅ Deploy preparado para ferreteria1.com/ferrecotiza"
+echo ""
+echo "📋 Próximos pasos en el servidor:"
+echo "1. Configurar Nginx como proxy inverso"
+echo "2. Configurar PostgreSQL"
+echo "3. Configurar SSL/HTTPS"
+echo "4. Configurar PM2 para el proceso"
